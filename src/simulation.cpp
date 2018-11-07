@@ -17,18 +17,29 @@ void Simulation::initialize(int argc, char **argv) {
     cmd.add(argTime);
 
     cmd.parse(argc, argv);
+	RNG.initialize(argSeed.getValue());
+	int nodes(argNode.getValue());
+	if (nodes < 1) nodes = RNG.poisson(50);
+	_network->resize(nodes);
+	double degree(argDegree.getValue());
+	CheckArgv(argSeed.getValue(), argTime.getValue(), nodes, degree);
+	if (degree < 1) degree = RNG.uniform_double(1, std::sqrt(nodes));
+	size_t nlink = _network->random_connect(degree);
+	std::cout << _network->size() << " nodes, " << nlink << " links\n";
+	maxtime = argTime.getValue();
+	
+	
+}	
 
-    RNG.initialize(argSeed.getValue());
-    int nodes(argNode.getValue());
-    if (nodes < 1) nodes = RNG.poisson(50);
-    _network->resize(nodes);
-    double degree(argDegree.getValue());
-    if (degree < 1) degree = RNG.uniform_double(1, std::sqrt(nodes));
-    size_t nlink = _network->random_connect(degree);
-    std::cout << _network->size() << " nodes, " << nlink << " links\n";
-    maxtime = argTime.getValue();
-}
-
+void Simulation::CheckArgv(long seed, int time, int nodes, double degree)  {
+	
+	if (seed < 0)
+		throw std::string("ERROR : the seed must be positive or equal to zero");
+	if (time < 0 )  
+		throw std::string("ERROR : the number of steps to simulate must be  a non-negative integer");	
+	if (degree >= std::sqrt(nodes))
+		throw std::string("ERROR : number of degree higher than the standard deviation  \nLimit is degree < sqrt(nodes)");	
+}   
 
 void Simulation::run() {
     for (int time=0; time<maxtime; time++) {
@@ -58,3 +69,4 @@ void Simulation::step() const {
     }
     _network->set_values(next_values);
 }
+
